@@ -88,6 +88,10 @@ textarea{resize:vertical;min-height:80px}
 </div>
 </div>
 <div class="main">
+<div id="upgrade-banner" class="upgrade" style="display:none">
+  <strong style="color:var(--cream)">Free tier</strong> — 2 projects, 50 issues. <a href="https://stockyard.dev/bounty/" target="_blank">Upgrade to Pro for $0.99/mo →</a>
+</div>
+
 <div class="tabs">
 <div class="tab active" data-tab="issues" onclick="switchTab('issues')">Issues</div>
 <div class="tab" data-tab="milestones" onclick="switchTab('milestones')">Milestones</div>
@@ -431,4 +435,5 @@ function switchTab(tab){
 function closeModal(){document.getElementById('modal').innerHTML=''}
 
 init();
+fetch('/api/tier').then(r=>r.json()).then(j=>{if(j.tier==='free'){document.getElementById('upgrade-banner').style.display='block';var b=document.getElementById('tier-badge');if(b){b.className='badge badge-free';b.textContent='Free'}}else{var b=document.getElementById('tier-badge');if(b){b.className='badge badge-pro';b.textContent='Pro'}}}).catch(()=>{var b=document.getElementById('upgrade-banner');if(b)b.style.display='block'});
 </script></body></html>`
