@@ -26,7 +26,7 @@ func main() {
 	}
 	defer db.Close()
 
-	srv := server.New(db)
+	srv := server.New(db, server.DefaultLimits())
 
 	fmt.Printf("\n  Bounty — Self-hosted bug tracker and issue manager\n")
 	fmt.Printf("  ─────────────────────────────────\n")

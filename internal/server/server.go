@@ -10,12 +10,13 @@ import (
 )
 
 type Server struct {
-	db  *store.DB
-	mux *http.ServeMux
+	db     *store.DB
+	mux    *http.ServeMux
+	limits Limits
 }
 
-func New(db *store.DB) *Server {
-	s := &Server{db: db, mux: http.NewServeMux()}
+func New(db *store.DB, limits Limits) *Server {
+	s := &Server{db: db, mux: http.NewServeMux(), limits: limits}
 
 	// Projects
 	s.mux.HandleFunc("GET /api/projects", s.listProjects)
@@ -87,6 +88,14 @@ func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
+	// Enforce project limit
+	if s.limits.MaxProjects > 0 {
+		projects := s.db.ListProjects()
+		if len(projects) >= s.limits.MaxProjects {
+			writeErr(w, 402, "Free tier limit: "+strconv.Itoa(s.limits.MaxProjects)+" projects. Upgrade to Pro at https://stockyard.dev/bounty/")
+			return
+		}
+	}
 	var p store.Project
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		writeErr(w, 400, "invalid json")
