@@ -23,7 +23,7 @@ type Limits struct {
 
 func FreeLimits() Limits {
 	return Limits{
-		MaxProjects: 2, MaxIssuesPerProject: 25,
+		MaxProjects: 1, MaxIssuesPerProject: 10,
 		Milestones: false, Labels: true, Export: false,
 		Tier: "free",
 	}
