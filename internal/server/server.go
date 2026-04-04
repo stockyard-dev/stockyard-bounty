@@ -33,6 +33,7 @@ func New(db *store.DB, limits Limits) *Server {
 	s.mux.HandleFunc("DELETE /api/issues/{id}", s.deleteIssue)
 	s.mux.HandleFunc("POST /api/issues/{id}/close", s.closeIssue)
 	s.mux.HandleFunc("POST /api/issues/{id}/reopen", s.reopenIssue)
+	s.mux.HandleFunc("POST /api/issues/{id}/status", s.setIssueStatus)
 
 	// Comments
 	s.mux.HandleFunc("GET /api/issues/{id}/comments", s.listComments)
@@ -285,6 +286,31 @@ func (s *Server) reopenIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, s.db.GetIssue(r.PathValue("id")))
+}
+
+func (s *Server) setIssueStatus(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if s.db.GetIssue(id) == nil {
+		writeErr(w, 404, "not found")
+		return
+	}
+	var body struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeErr(w, 400, "invalid json")
+		return
+	}
+	valid := map[string]bool{"open": true, "in_progress": true, "closed": true}
+	if !valid[body.Status] {
+		writeErr(w, 400, "status must be open, in_progress, or closed")
+		return
+	}
+	if err := s.db.SetStatus(id, body.Status); err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, s.db.GetIssue(id))
 }
 
 // ── Comments ──

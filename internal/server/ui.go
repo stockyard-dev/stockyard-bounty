@@ -36,7 +36,7 @@ a{color:var(--rl);text-decoration:none}a:hover{color:var(--gold)}
 .issue-row{display:flex;align-items:flex-start;gap:.6rem;padding:.55rem .7rem;border:1px solid var(--bg3);background:var(--bg2);margin-bottom:1px;cursor:pointer;transition:background .1s}
 .issue-row:hover{background:var(--bg3)}
 .issue-status{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
-.issue-status.open{background:var(--green)}.issue-status.closed{background:var(--cm)}
+.issue-status.open{background:var(--green)}.issue-status.in_progress{background:var(--gold)}.issue-status.closed{background:var(--cm)}
 .issue-body{flex:1;min-width:0}
 .issue-title{font-size:.8rem;font-weight:600;color:var(--cream)}
 .issue-meta{font-size:.65rem;color:var(--cm);margin-top:2px;display:flex;gap:.7rem;flex-wrap:wrap}
@@ -70,6 +70,25 @@ textarea{resize:vertical;min-height:80px}
 .act-item{font-size:.72rem;padding:.3rem 0;border-bottom:1px solid var(--bg3);color:var(--cd)}
 .act-action{font-weight:600;color:var(--rl)}.act-time{color:var(--cm);font-size:.6rem;float:right}
 
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;min-height:400px}
+@media(max-width:700px){.board{grid-template-columns:1fr}}
+.board-col{background:var(--bg2);border:1px solid var(--bg3);padding:.5rem;min-height:300px}
+.board-col.drag-over{border-color:var(--rust);background:rgba(196,93,44,.08)}
+.col-hdr{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--leather);padding:.3rem .2rem .5rem;display:flex;justify-content:space-between;align-items:center}
+.col-hdr .col-count{background:var(--bg3);color:var(--cream);padding:.1rem .4rem;border-radius:2px;font-size:.6rem}
+.col-hdr .col-open{color:var(--green)}.col-hdr .col-wip{color:var(--gold)}.col-hdr .col-done{color:var(--cm)}
+.board-card{background:var(--bg);border:1px solid var(--bg3);padding:.5rem .6rem;margin-bottom:.35rem;cursor:grab;transition:all .15s;font-size:.75rem}
+.board-card:hover{border-color:var(--leather)}
+.board-card:active{cursor:grabbing}
+.board-card.dragging{opacity:.4;border-color:var(--rust)}
+.board-card .bc-title{font-weight:600;color:var(--cream);margin-bottom:.2rem}
+.board-card .bc-meta{font-size:.6rem;color:var(--cm);display:flex;gap:.5rem;flex-wrap:wrap}
+.board-card .bc-num{color:var(--leather)}
+.view-toggle{display:flex;gap:0;margin-left:auto}
+.view-toggle .vt{padding:.25rem .6rem;font-size:.65rem;cursor:pointer;border:1px solid var(--bg3);color:var(--cm);background:var(--bg)}
+.view-toggle .vt:first-child{border-right:none}
+.view-toggle .vt.active{background:var(--bg2);color:var(--rl);border-color:var(--rust)}
+
 .proj-card{background:var(--bg2);border:1px solid var(--bg3);padding:.8rem;margin-bottom:.5rem;cursor:pointer;transition:background .1s}
 .proj-card:hover{background:var(--bg3)}
 .proj-card h3{font-size:.85rem;margin-bottom:.2rem}
@@ -94,13 +113,14 @@ textarea{resize:vertical;min-height:80px}
 
 <div class="tabs">
 <div class="tab active" data-tab="issues" onclick="switchTab('issues')">Issues</div>
+<div class="tab" data-tab="board" onclick="switchTab('board')">Board</div>
 <div class="tab" data-tab="milestones" onclick="switchTab('milestones')">Milestones</div>
 <div class="tab" data-tab="activity" onclick="switchTab('activity')">Activity</div>
 </div>
 
 <div id="pane-issues">
 <div class="toolbar">
-<select id="fStatus" onchange="loadIssues()"><option value="open">Open</option><option value="closed">Closed</option><option value="all">All</option></select>
+<select id="fStatus" onchange="loadIssues()"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="closed">Closed</option><option value="all">All</option></select>
 <select id="fPriority" onchange="loadIssues()"><option value="">Priority</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
 <select id="fLabel" onchange="loadIssues()"><option value="">Label</option></select>
 <select id="fAssignee" onchange="loadIssues()"><option value="">Assignee</option></select>
@@ -109,6 +129,23 @@ textarea{resize:vertical;min-height:80px}
 <button class="btn btn-p" onclick="showNewIssue()">+ Issue</button>
 </div>
 <div id="issueList"></div>
+</div>
+
+<div id="pane-board" style="display:none">
+<div class="board">
+<div class="board-col" data-status="open" ondragover="boardDragOver(event)" ondragleave="boardDragLeave(event)" ondrop="boardDrop(event)">
+<div class="col-hdr"><span class="col-open">Open</span><span class="col-count" id="bc-open">0</span></div>
+<div class="col-cards" id="col-open"></div>
+</div>
+<div class="board-col" data-status="in_progress" ondragover="boardDragOver(event)" ondragleave="boardDragLeave(event)" ondrop="boardDrop(event)">
+<div class="col-hdr"><span class="col-wip">In Progress</span><span class="col-count" id="bc-wip">0</span></div>
+<div class="col-cards" id="col-in_progress"></div>
+</div>
+<div class="board-col" data-status="closed" ondragover="boardDragOver(event)" ondragleave="boardDragLeave(event)" ondrop="boardDrop(event)">
+<div class="col-hdr"><span class="col-done">Closed</span><span class="col-count" id="bc-closed">0</span></div>
+<div class="col-cards" id="col-closed"></div>
+</div>
+</div>
 </div>
 
 <div id="pane-milestones" style="display:none">
@@ -195,8 +232,10 @@ async function showIssue(id){
   const priCls='pri-'+i.priority;
   const labels=(i.labels||[]).map(l=>'<span class="label-chip">'+esc(l)+'</span>').join(' ');
   const statusBtn=i.status==='open'?
-    '<button class="btn btn-d" onclick="closeIss(\''+i.id+'\')">Close issue</button>':
-    '<button class="btn btn-s" onclick="reopenIss(\''+i.id+'\')">Reopen issue</button>';
+    '<button class="btn btn-b" onclick="setStatus(\''+i.id+'\',\'in_progress\')">Start</button><button class="btn btn-d" onclick="closeIss(\''+i.id+'\')">Close</button>':
+    i.status==='in_progress'?
+    '<button class="btn btn-s" onclick="reopenIss(\''+i.id+'\')">Back to Open</button><button class="btn btn-d" onclick="closeIss(\''+i.id+'\')">Close</button>':
+    '<button class="btn btn-s" onclick="reopenIss(\''+i.id+'\')">Reopen</button>';
   const proj=projects.find(p=>p.id===i.project_id);
   document.getElementById('modal').innerHTML='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
@@ -209,7 +248,7 @@ async function showIssue(id){
     '</div>'+
     '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin:.6rem 0;font-size:.7rem;color:var(--leather)">'+
       '<span class="priority-badge '+priCls+'">'+i.priority+'</span>'+
-      '<span>Status: <b style="color:'+(i.status==='open'?'var(--green)':'var(--cm)')+'">'+i.status+'</b></span>'+
+      '<span>Status: <b style="color:'+(i.status==='open'?'var(--green)':i.status==='in_progress'?'var(--gold)':'var(--cm)')+'">'+i.status.replace('_',' ')+'</b></span>'+
       (proj?'<span>Project: '+esc(proj.name)+'</span>':'')+
       (i.assignee?'<span>Assignee: '+esc(i.assignee)+'</span>':'')+
       (i.time_estimate?'<span>Est: '+i.time_estimate+'m</span>':'')+
@@ -239,6 +278,7 @@ async function addComment(issueID){
 
 async function closeIss(id){await api('/api/issues/'+id+'/close',{method:'POST'});closeModal();loadIssues();loadStats()}
 async function reopenIss(id){await api('/api/issues/'+id+'/reopen',{method:'POST'});closeModal();loadIssues();loadStats()}
+async function setStatus(id,status){await api('/api/issues/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});closeModal();loadIssues();loadStats()}
 async function delIss(id){await api('/api/issues/'+id,{method:'DELETE'});closeModal();loadIssues();loadStats()}
 
 function showNewIssue(){
@@ -426,10 +466,73 @@ async function loadActivity(){
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   document.getElementById('pane-issues').style.display=tab==='issues'?'':'none';
+  document.getElementById('pane-board').style.display=tab==='board'?'':'none';
   document.getElementById('pane-milestones').style.display=tab==='milestones'?'':'none';
   document.getElementById('pane-activity').style.display=tab==='activity'?'':'none';
+  if(tab==='board')loadBoard();
   if(tab==='milestones')loadMilestones();
   if(tab==='activity')loadActivity();
+}
+
+// ── Board ──
+
+let boardIssues=[];
+async function loadBoard(){
+  const p=new URLSearchParams();
+  if(curProject)p.set('project_id',curProject);
+  p.set('status','all');p.set('limit','200');
+  const d=await api('/api/issues?'+p);
+  boardIssues=d.issues||[];
+  renderBoard();
+}
+
+function renderBoard(){
+  const cols={open:[],in_progress:[],closed:[]};
+  boardIssues.forEach(i=>{
+    const s=cols[i.status]!==undefined?i.status:'open';
+    cols[s].push(i);
+  });
+  ['open','in_progress','closed'].forEach(status=>{
+    const el=document.getElementById('col-'+status);
+    el.innerHTML=cols[status].map(i=>{
+      const priCls='pri-'+i.priority;
+      const labels=(i.labels||[]).map(l=>'<span class="label-chip">'+esc(l)+'</span>').join(' ');
+      return '<div class="board-card" draggable="true" data-id="'+i.id+'" ondragstart="boardDragStart(event)" ondragend="boardDragEnd(event)" onclick="showIssue(\''+i.id+'\')">'+
+        '<div class="bc-title">'+esc(i.title)+'</div>'+
+        '<div class="bc-meta">'+
+          '<span class="bc-num">#'+i.number+'</span>'+
+          '<span class="priority-badge '+priCls+'">'+i.priority+'</span>'+
+          labels+
+          (i.assignee?'<span>'+esc(i.assignee)+'</span>':'')+
+        '</div>'+
+      '</div>'
+    }).join('');
+  });
+  document.getElementById('bc-open').textContent=cols.open.length;
+  document.getElementById('bc-wip').textContent=cols.in_progress.length;
+  document.getElementById('bc-closed').textContent=cols.closed.length;
+}
+
+let dragId='';
+function boardDragStart(e){
+  dragId=e.target.dataset.id;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function boardDragEnd(e){e.target.classList.remove('dragging')}
+function boardDragOver(e){
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('drag-over');
+}
+function boardDragLeave(e){e.currentTarget.classList.remove('drag-over')}
+async function boardDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const newStatus=e.currentTarget.dataset.status;
+  if(!dragId||!newStatus)return;
+  await api('/api/issues/'+dragId+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:newStatus})});
+  dragId='';
+  loadBoard();loadStats();
 }
 
 function closeModal(){document.getElementById('modal').innerHTML=''}

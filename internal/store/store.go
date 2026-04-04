@@ -375,6 +375,21 @@ func (d *DB) ReopenIssue(id string) error {
 	return nil
 }
 
+func (d *DB) SetStatus(id, status string) error {
+	t := now()
+	closedAt := ""
+	if status == "closed" {
+		closedAt = t
+	}
+	if _, err := d.db.Exec(`UPDATE issues SET status=?,closed_at=?,updated_at=? WHERE id=?`, status, closedAt, t, id); err != nil {
+		return err
+	}
+	if e := d.GetIssue(id); e != nil {
+		d.log(e.ProjectID, id, "status_changed", fmt.Sprintf("#%d → %s", e.Number, status), "")
+	}
+	return nil
+}
+
 func (d *DB) DeleteIssue(id string) error {
 	d.db.Exec(`DELETE FROM comments WHERE issue_id=?`, id)
 	_, err := d.db.Exec(`DELETE FROM issues WHERE id=?`, id)
